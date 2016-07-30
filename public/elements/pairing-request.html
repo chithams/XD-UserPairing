@@ -1,0 +1,56 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<dom-module id="pairing-request">
+    <template>
+        <paper-toast duration="0" text = "{{texttodisplay}}">
+            <div>[[contactid]]</div>
+            <paper-button id = "accBtn" on-click="accept" class="yellow-button"><iron-icon icon="check"></iron-icon>Accept</paper-button>
+            <paper-button id = "declBtn"  on-click="decline" class="yellow-button"><iron-icon icon="close"></iron-icon>Decline</paper-button>
+        </paper-toast>
+    </template>
+
+
+    <script>
+         function acceptReq(){
+             var infoBtn = document.getElementById("info");
+             var contactID = infoBtn.getAttribute("value");
+            console.log("accepted req from "+ contactID);
+//            delete displayedRequests[contactID];
+//            XDmvc.pairFriends(contactID);
+        }
+        function declineReq() {
+            var infoBtn = document.getElementById("info");
+            var contactID = infoBtn.getAttribute("value");
+
+            console.log("declined req from " + contactID);
+//            XDmvc.declinePairingRequest(contactID);
+//            delete displayedRequests[contactID];
+        }
+        Polymer({
+            is: "pairing-request",
+            properties: {
+                texttodisplay : String,
+                contactid : String
+            },
+            attached: function() {
+                var toast = this.$.toast1;
+                toast.open();
+                var declinedBtn = this.$.declBtn;
+                declinedBtn.addEventListener('click', function (e) {
+                  declineReq();
+                })
+            },
+            displayName : function(texttodisplay, contactid){
+                console.log(this.texttodisplay);
+                console.log(this.contactid);
+            },
+            accept: function() {
+                this.$$("paper-toast").toggle();
+                console.log("accepted req from "+ this.contactid);
+            }
+        })
+    </script>
+</dom-module>

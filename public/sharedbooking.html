@@ -1,0 +1,425 @@
+<!--
+/*
+* XD-MVC -- A framework for cross-device applications
+* Copyright (C) 2014-2015 Maria Husmann. All rights reserved.
+*
+* This file was created by Sivaranjini Chithambaram.
+*
+* XD-MVC is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* XD-MVC is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with XD-MVC. If not, see <http://www.gnu.org/licenses/>.
+*
+* See the README and LICENSE files for further information.
+*
+*/
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+
+    <link rel="import" href="bower_components/google-map/google-map.html">
+    <link rel="import" href="bower_components/google-map/google-map-marker.html">
+    <link rel="import" href="bower_components/polymer/polymer.html">
+    <script src="bower_components/xdmvcclient/js/queryParams.js"></script>
+
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-synchronised.html">
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-connection.html">
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-connect.html">
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-roles.html">
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-devices.html">
+    <link rel="import" href="bower_components/xdmvcclient/polymer/xdmvc-url-pairing.html">
+    <link rel="import" href="bower_components/xdmvcclient/layouts/controller-layout.html">
+    <link rel="import" href="bower_components/xdmvcclient/layouts/page-layout.html">
+    <link rel="import" href="bower_components/paper-tabs/paper-tabs.html">
+    <link rel="import" href="bower_components/paper-button/paper-button.html">
+    <link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html">
+    <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+    <link rel="import" href="bower_components/paper-header-panel/paper-header-panel.html">
+    <link rel="import" href="bower_components/paper-card/paper-card.html">
+    <link rel="import" href="bower_components/iron-icons/iron-icons.html">
+    <link rel="import" href="bower_components/iron-icons/communication-icons.html">
+    <script src="bower_components/xdmvcclient/js/userpairing.js"></script>
+
+    <link href="css/main.css" rel="stylesheet">
+    <link rel="import" href="elements/login-google.html">
+    <link rel="import" href="elements/contacts-list.html">
+    <link rel="import" href="elements/contacts-drawer.html">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>Shared Booking</title>
+    <style>
+
+        html, body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+        }
+
+        :host {
+            display: inline-block;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            width: auto; \9; /* ie8 */
+        }
+
+        p {
+            width: auto;
+        }
+
+    </style>
+</head>
+<body>
+<dom-module id="my-app">
+    <template style="width:100%; height:100%;position:relative;">
+
+        <xdmvc-connection peerport="9005" ajaxport="9006" socketport="3001"></xdmvc-connection>
+        <xdmvc-synchronised id="sync"
+                            objects='{{synced}}'>
+        </xdmvc-synchronised>
+
+        <xdmvc-devices id="devices" devices="{{devices}}"></xdmvc-devices>
+        <style is="custom-style">
+            paper-card.white {
+                --paper-card-header-color: #fff;
+            }
+        </style>
+        <contacts-drawer groups="[[groups]]">
+            <paper-toolbar style="background:#2da7e6">
+                <h1>Shared Booking</h1>
+            </paper-toolbar>
+            <div style="margin:10px">
+                <login-google></login-google>
+            </div>
+            <controller-layout>
+                <div>{{synced.current.index}}</div>
+                <div class="controller" style="margin:15px;width:auto">
+                    <div>
+                        <h2>Hotels in Barcelona </h2>
+                        <paper-menu selected="{{synced.hotel.index}}">
+                            <paper-card heading="Arena Hotel" image="images/Shared%20Booking/large/hotel1.jpg" class="white"
+                                        style="margin-bottom:4px;">
+                                <div class="card-actions">
+                                    <paper-icon-button icon="favorite"></paper-icon-button>
+                                    <paper-icon-button icon="bookmark"></paper-icon-button>
+                                    <paper-icon-button icon="social:share"></paper-icon-button>
+                                </div>
+                            </paper-card>
+                            <paper-card heading="Park Inn Hotel" image="images/Shared%20Booking/large/hotel5.jpg" class="white"
+                                        style="margin-right:4px;">
+                                <div class="card-actions horizontal justified">
+                                    <paper-icon-button icon="favorite"></paper-icon-button>
+                                    <paper-icon-button icon="bookmark"></paper-icon-button>
+                                    <paper-icon-button icon="social:share"></paper-icon-button>
+                                </div>
+                            </paper-card>
+                            <paper-card heading="Hilton" image="images/Shared%20Booking/large/hotel2.jpg" class="white" style="margin-left:4px;">
+                                <div class="card-actions horizontal justified">
+                                    <paper-icon-button icon="favorite"></paper-icon-button>
+                                    <paper-icon-button icon="bookmark"></paper-icon-button>
+                                    <paper-icon-button icon="social:share"></paper-icon-button>
+                                </div>
+                            </paper-card>
+                            <paper-card heading="Sheraton" image="images/Shared%20Booking/large/hotel3.jpg" class="white"
+                                        style="margin-left:4px;height:20px;">
+                                <div class="card-actions horizontal justified">
+                                    <paper-icon-button icon="favorite"></paper-icon-button>
+                                    <paper-icon-button icon="bookmark"></paper-icon-button>
+                                    <paper-icon-button icon="social:share"></paper-icon-button>
+                                </div>
+                            </paper-card>
+
+                        </paper-menu>
+                    </div>
+                </div>
+                <div class="viewer" style="margin:15px;width:auto; height:100%;position:relative; ">
+                    <page-layout id="pages" selected="{{selectedPage.page.index}}">
+
+                        <div>
+                            <h2>Hotel Details</h2>
+
+                            <style is="custom-style">
+                                .cafe-header {
+                                    @apply(--paper-font-headline);
+                                }
+
+                                .cafe-light {
+                                    color: var(--paper-grey-600);
+                                }
+
+                                .cafe-location {
+                                    font-size: 15px;
+                                    vertical-align: middle;
+                                }
+
+                                .cafe-reserve {
+                                    color: var(--google-blue-500);
+                                }
+
+                                iron-icon.ystar {
+                                    --iron-icon-width: 16px;
+                                    --iron-icon-height: 16px;
+                                    color: var(--paper-amber-500);
+                                }
+
+                                iron-icon.gstar {
+                                    --iron-icon-width: 16px;
+                                    --iron-icon-height: 16px;
+                                    color: grey;
+                                }
+                            </style>
+                            <iron-pages style="width:80%" selected="{{synced.hotel.index}}">
+                                <div>
+                                    <div class="card-content">
+                                        <div class="cafe-header">Arena Hotel
+                                            <div class="cafe-location cafe-light">
+                                                <iron-icon icon="communication:location-on"></iron-icon>
+                                                <span>1km from city</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cafe-rating">
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="gstar" icon="star"></iron-icon>
+                                        </div>
+                                        <p></p>
+                                        <img src="images/Shared%20Booking/large/hotel1.jpg">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card-content">
+                                        <div class="cafe-header">Park Inn Hotel
+                                            <div class="cafe-location cafe-light">
+                                                <iron-icon icon="communication:location-on"></iron-icon>
+                                                <span>1km from city center</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cafe-rating">
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="gstar" icon="star"></iron-icon>
+                                            <iron-icon class="gstar" icon="star"></iron-icon>
+                                        </div>
+                                        <p></p>
+                                        <img src="images/Shared%20Booking/large/hotel5.jpg">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card-content">
+                                        <div class="cafe-header">Hilton
+                                            <div class="cafe-location cafe-light">
+                                                <iron-icon icon="communication:location-on"></iron-icon>
+                                                <span>1km from city center</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cafe-rating">
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                        </div>
+                                        <p></p>
+                                        <img src="images/Shared%20Booking/large/hotel3.jpg">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card-content">
+                                        <div class="cafe-header">Sheraton
+                                            <div class="cafe-location cafe-light">
+                                                <iron-icon icon="communication:location-on"></iron-icon>
+                                                <span>1km from city center</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cafe-rating">
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="ystar" icon="star"></iron-icon>
+                                            <iron-icon class="gstar" icon="star"></iron-icon>
+                                        </div>
+                                        <p></p>
+                                        <img src="images/Shared%20Booking/large/hotel2.jpg">
+                                    </div>
+                                </div>
+                            </iron-pages>
+
+                            <div class="card-actions" style="width:95%;">
+                                <p>One of our bestsellers in Barcelona!</p>
+                                <p class="cafe-light">
+                                    This hotel is less than a 5-minute walk from Notting Hill Gate, Bayswater and
+                                    Queensway London Underground stations,
+                                    Kensington Court Hotel Notting Hill is a Grade II heritage-listed townhouse across
+                                    from private gardens and features free WiFi.</p>
+
+                                <p style="clear:both">Hotel availability</p>
+                                <div class="horizontal justified">
+                                    <paper-icon-button icon="icons:event"></paper-icon-button>
+                                    <paper-button>June</paper-button>
+                                    <paper-button>July</paper-button>
+                                    <paper-button>August</paper-button>
+                                    <paper-button class="cafe-reserve">Reserve</paper-button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="width:auto; height:100%;position:relative;">
+                            <h2>Maps View</h2>
+                            <div style="width:100%; height:100%;position:relative">
+
+                                <iron-pages selected="{{synced.hotel.index}}" style="width:auto; height:100%;">
+                                    <div id="mapDiv1" style="width:auto; height:100%;">
+                                        <google-map latitude="41.3851" longitude="2.18" zoom="15"
+                                                    api-key="AIzaSyDhwS9Dyn_WiJzwIqHl6aXaCXhbM9ueEAA">
+                                            <google-map-marker latitude="41.385" longitude="2.185"
+                                                               title="Arena Hotel" draggable="true"><img
+                                                    src="images/Shared%20Booking/thumbnails/hotel1mini.jpg">
+                                                <p style="margin:2px;">Arena Hotel</p></google-map-marker>
+                                        </google-map>
+                                    </div>
+                                    <div id="mapDiv2" style="width:auto; height:100%;">
+                                        <google-map latitude="41.3851" longitude="2.18" zoom="15"
+                                                    api-key="AIzaSyDhwS9Dyn_WiJzwIqHl6aXaCXhbM9ueEAA">
+                                            <google-map-marker latitude="41.382" longitude="2.17"
+                                                               title="Park Inn Hotel" draggable="true"><img
+                                                    src="images/Shared%20Booking/thumbnails/hotel5mini.jpg">
+                                                <p style="margin:2px;">Park Inn Hotel</p></google-map-marker>
+                                        </google-map>
+                                    </div>
+                                    <div id="mapDiv3" style="width:auto; height:100%;">
+                                        <google-map latitude="41.3861" longitude="2.16" zoom="15"
+                                                    api-key="AIzaSyDhwS9Dyn_WiJzwIqHl6aXaCXhbM9ueEAA">
+                                            <google-map-marker latitude="41.386" longitude="2.16"
+                                                               title="Hilton" draggable="true"><img
+                                                    src="images/Shared%20Booking/thumbnails/hotel3mini.jpg">
+                                                <p style="margin:2px;">Hilton</p></google-map-marker>
+                                        </google-map>
+                                    </div>
+                                    <div id="mapDiv4" style="width:auto; height:100%;">
+                                        <google-map latitude="41.387" longitude="2.15" zoom="15"
+                                                    api-key="AIzaSyDhwS9Dyn_WiJzwIqHl6aXaCXhbM9ueEAA">
+                                            <google-map-marker latitude="41.387" longitude="2.15"
+                                                               title="Sheraton" draggable="true"><img
+                                                    src="images/Shared%20Booking/thumbnails/hotel2mini.jpg">
+                                                <p style="margin:2px;">Sheraton</p></google-map-marker>
+                                        </google-map>
+                                    </div>
+                                </iron-pages>
+                            </div>
+                        </div>
+                    </page-layout>
+                </div>
+            </controller-layout>
+        </contacts-drawer>
+    </template>
+</dom-module>
+
+<script>
+    HTMLImports.whenReady(function () {
+
+        Polymer({
+            is: "my-app",
+
+            properties: {
+                synced: {
+                    type: Object,
+                    value: function () {
+                        return {"hotel": {"index": 0}}
+                    },
+                    notify: true
+                },
+                selectedPage: {
+                    type: Object,
+                    value: function () {
+                        return {"page": {"index": 0}}
+                    },
+                    notify: true
+                },
+                groups: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                }
+            },
+
+            ready: function () {
+                XDmvc.on("XDserverReady", this.adjustRoles.bind(this));
+                XDmvc.on("XDconnection", this.adjustRoles.bind(this));
+                XDmvc.on("XDdisconnection", this.adjustRoles.bind(this));
+                XDmvc.on("XDdevice", this.adjustRoles.bind(this));
+                window.addEventListener("resize", this.adjustRoles.bind(this));
+
+                this.push("groups", {"name": "all", "requiresAck": true});
+                this.push("groups", {"name": "friend", "requiresAck": false});
+                this.push("groups", {"name": "work", "requiresAck": true});
+                this.push("groups", {"name": "family", "requiresAck": false});
+
+                console.log(this.groups[0]);
+                console.log(this.groups);
+            },
+
+            adjustRoles: function () {
+                if (XDmvc.getConnectedDevices().length == 0) {
+                    XDmvc.addRole("viewer");
+                    XDmvc.addRole("controller");
+                } else {
+                    var devices = XDmvc.getConnectedDevices().slice();
+                    devices = devices.map(function (d) {
+                        return d.device;
+                    });
+                    devices.push(XDmvc.device);
+                    devices.sort(function (a, b) {
+                        // First compare diagonal, then on ID to be deterministic
+                        var diff = a.diam - b.diam;
+                        return diff !== 0 ? diff : a.id.localeCompare(b.id);
+                    });
+                    var smallest = devices[0];
+                    if (smallest === XDmvc.device) {
+                        XDmvc.addRole("controller");
+                        XDmvc.removeRole("viewer");
+                    } else {
+                        XDmvc.addRole("viewer");
+                        XDmvc.removeRole("controller");
+                    }
+                }
+            },
+            selectMap: function () {
+                this.$.pages.select(1);
+                this.selectedPage.page.index = 1;
+            },
+            selectDetails: function () {
+                this.$.pages.select(0);
+                this.selectedPage.page.index = 1;
+            }
+
+        });
+    });
+
+</script>
+
+<my-app></my-app>
+
+</body>
+</html>

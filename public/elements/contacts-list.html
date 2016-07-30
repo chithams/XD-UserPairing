@@ -1,0 +1,438 @@
+<!--
+/*
+* XD-MVC -- A framework for cross-device applications
+* Copyright (C) 2014-2015 Maria Husmann. All rights reserved.
+*
+* This file was created by Sivaranjini Chithambaram.
+*
+* XD-MVC is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* XD-MVC is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with XD-MVC. If not, see <http://www.gnu.org/licenses/>.
+*
+* See the README and LICENSE files for further information.
+*
+*/
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<script src="../bower_components/xdmvcclient/js/userpairing.js"></script>
+<head>
+
+    <link rel="stylesheet" media="screen and (max-device-width: 500px)" href="../css/contacts.css" />
+    <link rel="stylesheet" media="screen and (min-device-width: 500px)" href="../css/bigcontacts.css" />
+    <style>
+
+
+        .toast{
+            --paper-toast-background-color: black;
+            --paper-toast-color: white;
+        }
+    </style>
+</head>
+<dom-module id="contacts-list">
+    <link rel="import" type="css" href="contacts.css">
+    <template>
+        <style>
+
+            :host {
+                display: inline;
+                clear:both;
+                float:right;
+                width:max-content;
+
+            }
+            .smallIcon{
+                --iron-icon-width: 10px;
+                --iron-icon-height: 10px;
+                padding:0;
+            }
+
+        </style>
+        <p style="clear:both"></p>
+        <div class="contactsBtn" id="contactsBtn">
+            <paper-icon-button  style="float:right;z-index:1" icon="social:people" on-click="showContacts"></paper-icon-button>
+        </div>
+        <paper-card  class="contactsList" id="contactsList" >
+            <paper-icon-button class="smallIcon" style="float:right;z-index:1" icon="close" on-click="showContacts"></paper-icon-button>
+            <div style="clear:both;">
+                <select class="drpDwn" style="float:right;" id="contactsDropdown">
+                    <option style="width:110px;padding:0;" value=" ">Choose List</option>
+                    <option style="width:110px;padding:0;" value="all"style="background:lightgrey;color:black">All</option>
+                    <option value="friend" style="background:#ebd7f4;color:black">Close Friends</option>
+                    <option value="family" style="background:#d7f4d7;color:black">Family</option>
+                    <option value="work" style="background:#fdf28b;color:black">Colleagues</option>
+                    <option value="acquaintances"style="background:#98cdfd;color:black">Acquaintances</option>
+                </select>
+                <div style = "clear:both;" >
+                    <button class = "button"  style = "clear:both" on-click ="getFriends">Show contacts</button>
+                </div>
+                <div >
+                    <paper-toggle-button checked class="tabletoggle" style="clear:both;float:right;alignment:center;"id = "toggle" ></paper-toggle-button>
+                    <p  class="tabletoggle" style="clear:both;float:right;alignment:center;" >Sort by distance</p>
+                </div>
+                <pre id="output" style="clear:both;"></pre>
+
+                <div id="tableDiv">
+                <table id ="contactsTable" align="right" >
+                    <template is="dom-repeat" items="{{onlineFriends}}">
+                        <button class="button" on-click="connectFriend"  style ="[[getRelationship(item)]]">
+                            [[getName(item)]]</button>
+                    </template>
+                </table>
+                </div>
+            </div>
+        </paper-card>
+
+        <paper-toast id="toast" duration="0">
+            <template is="dom-repeat" items="{{pairingRequests}}">
+                <div>[[getName(item)]] would like to connect with you!</div>
+                <paper-button id = "acc" on-click="acceptReq" class="yellow-button"><iron-icon icon="check"></iron-icon>Accept</paper-button>
+                <paper-button id = "decl" on-click="declineReq" class="yellow-button"><iron-icon icon="close"></iron-icon>Decline</paper-button>
+            </template>
+        </paper-toast>
+    </template>
+
+    <script>
+        Polymer( {
+            is: "contacts-list",
+            properties: {
+              //  friendList : {}, //dict key: contact id, value: list of 2 elements, 1st element in list = name, 2nd element in list = relation label
+                myID : String,
+                friendList : {
+                    type: Object,
+                    value: function() { return {}; }
+                },
+                pairingRequests: {
+                  type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+                groups:{
+                    type: Array,
+                    value: function(){return[];}
+                },
+                onlineFriends:{
+                    type:Array,
+                    value:function(){
+                        return[];
+                    }
+                },
+                displayedRequests : {
+                    type: Object,
+                    value: function() { return{};}
+                } //key = contactID, value = true if already displayed req from contact
+            },
+
+            showContacts: function(){
+                var btn = this.$.contactsBtn;
+                var list = this.$.contactsList;
+                var btnVisibility = btn.getAttribute("style");
+                if(btnVisibility == "display:none") {
+                    btn.setAttribute("style", "display:inline-block");
+                    list.setAttribute("style","display:none");
+                }
+                else{
+                    list.setAttribute("style", "display:inline-block");
+                    btn.setAttribute("style","display:none");
+                }
+            },
+
+            getFriends: function (){
+                var dropDown = this.$.contactsDropdown;
+                var groupName = dropDown.options[dropDown.selectedIndex].value;
+                XDmvc.getFriendsSelected([groupName],function(data){
+                    this.displayFriends(data,"");
+                }.bind(this));
+                window.setInterval(function(){
+                    this.refreshFriendList();
+                }.bind(this), 3000);
+
+            },
+
+            getName: function(contactId){
+                if(this.friendList[contactId]) {
+                    return this.friendList[contactId][0];
+                }
+                else{
+                    return "Contact with no name, id: "+contactId;
+                }
+            },
+            created: function(){
+
+
+            },
+            ready: function(){
+                window.onbeforeunload = function() {
+                    XDmvc.removeDevice();
+                };
+                window.setInterval(function(){
+                    XDmvc.getPairingRequests();}, 3000);
+            },
+            attached: function(){
+                XDmvc.on("deleteDisplayedRequest",function(data){
+                    if(this.displayedRequests[data]) {
+                        delete this.displayedRequests[data];
+                    }
+                }.bind(this));
+
+                XDmvc.on("signedIn",function(data){
+                    if(data){
+                        this.myID = data;
+                        this.pairAutomatically(data);
+                    }
+                }.bind(this));
+
+                XDmvc.on("signedOut",function(data){
+                    if(data){
+                        this.friendList = {};
+                        this.pairingRequests = [];
+                        this.onlineFriends = [];
+                        this.displayedRequests = {};
+                        this.myID = "";
+                    }
+                }.bind(this));
+
+                XDmvc.on("onlineContact", function(contactName,contactID,contactRelation, contactsDeviceList){
+                    this.enterOnlineFriend(contactName,contactID,contactRelation, contactsDeviceList);
+                }.bind(this));
+
+                XDmvc.on("newPairingRequests",function(parsedList){
+                    console.log("newPairingReq");
+
+                    for( var i  = 0; i < parsedList.length; i ++){
+                        var x = parsedList[i];
+                        var contactID = x.toString();
+                        if(!this.displayedRequests[contactID]){
+                            this.push("pairingRequests", contactID);
+                            this.$.toast.open();
+                            this.displayedRequests[contactID] = true;
+                            }
+                        else{
+                            console.log("This request was already displayed");
+                        }
+                    }
+                }.bind(this));
+                this.$.toggle.addEventListener('change', function () {
+                    if (this.checked) {
+                       this.sortGroupByDistances();
+                    }
+                }.bind(this));
+                if(this.groups.length<=0){
+//                    console.log("NO GROUPS: "+this.groups);
+                    this.push("groups", {"name":"all", "requiresAck":true});
+                    this.push("groups", {"name":"friend", "requiresAck":false});
+                    this.push("groups",{"name":"family", "requiresAck":true});
+                    this.push("groups", {"name":"work", "requiresAck":true});
+                    this.push("groups",{"name":"acquaintances", "requiresAck":true});
+
+                    console.log(this.groups[0])
+                }
+
+                if (XDmvc.XDd2d.serverReady) {
+                    XDmvc.configureGroups(this.groups);
+                } else { // not yet connected to server, wait for the connection event
+                    XDmvc.XDd2d.on("XDserverReady", function(data){
+                        XDmvc.configureGroups(this.groups);
+                    }.bind(this));
+                }
+            },
+
+            sortGroupByDistances: function() {
+                var dropDown = this.$.contactsDropdown;
+                var groupName = dropDown.options[dropDown.selectedIndex].value;
+                XDmvc.getFriendsSelected([groupName],function(friendsInGroup){
+                    if(friendsInGroup){
+
+                        XDmvc.sortGroupByDistance(friendsInGroup,function(sortedGroup){
+                            if(sortedGroup) {
+                                this.displayFriends(sortedGroup, "sortList");
+                            }
+                        }.bind(this));
+                    }
+                }.bind(this))
+            },
+
+            displayFriends: function(friendsInGroup, sortList){
+                if(friendsInGroup){
+                    var parsedList = JSON.parse(friendsInGroup);
+                    this.onlineFriends = [];
+                    for(var i = 0; i<parsedList.length; i++) {
+                        var id;
+                        if(sortList){
+                            id= parsedList[i][1];
+                        }
+                        else{
+                            id = parsedList[i];
+                        }
+
+                        if(this.friendList[id]){
+                            var index = this.onlineFriends.indexOf(id);
+                            if(index<0){
+                                this.push("onlineFriends",id);
+                            }
+                        }
+                        else{
+                            console.log('displayFriends error: no entry in friendList');
+                        }
+                    }
+                }
+                else{
+                    console.log("displayFriends error : user has no friends in this group")
+                }
+            },
+
+            refreshFriendList: function(){
+                var dropDown = this.$.contactsDropdown;
+                var paperMenu = this.$.pMenu;//
+                var groupName = dropDown.options[dropDown.selectedIndex].value;
+                var toggle = this.$.toggle;
+                if(toggle.checked){
+                    this.sortGroupByDistances();
+                }
+                else{
+                    XDmvc.getFriendsSelected([groupName],function(data){
+                        this.displayFriends(data,"");
+                    }.bind(this))
+                }
+            },
+
+            enterOnlineFriend: function(contactName,contactID,contactRelation,contactsDeviceList){
+                //enters online friends into this.friendList, checks if already listed (through G+ API)
+                if (contactID) {
+                    XDmvc.logDistance(contactID);
+                    XDmvc.enterRelationship(contactID,contactRelation);
+                    if (this.friendList[contactID] && this.friendList[contactID].length > 0) {
+                            if(this.friendList[contactID].length<2){
+                                this.friendList[contactID].push(contactRelation);
+                            }
+                    }
+                    else {
+                        if(!contactName){
+                            contactName = "noName"
+                        }
+                        if(contactRelation){
+                            console.log("enterin contactRelation");
+
+                            this.friendList[contactID] = [contactName,contactRelation];
+                        }
+                        else{
+                            console.log("just name");
+                            this.friendList[contactID] = [contactName];
+                        }
+                        console.log(contactName);
+                    }
+                }
+                else {
+                    console.log("contactInfo empty");
+                }
+            },
+
+            appendPre: function (message) {
+                var pre = this.$.output;
+                var textContent = document.createTextNode(message + '\n');
+                // pre.setAttribute('font-family', "Myriad Pro");
+                pre.appendChild(textContent);
+                document.body.appendChild(pre);
+            },
+
+            getRelationship: function(contactId){
+                if(this.friendList[contactId]){
+                    if(this.friendList[contactId][1]){
+                        var relationship = this.friendList[contactId][1];
+                        if(relationship == "friend"){
+                            return "background:#ebd7f4";
+                        }
+                        if(relationship == "work"){
+                            return "background:#fdf28b";
+                        }
+                        if(relationship == "family"){
+                            return "background:#d7f4d7";
+                        }
+                        if(relationship == "acquaintances"){
+                            return "background:#98cdfd";
+                        }
+                        else{
+                            return "background:lightgrey"
+                        }
+                    }
+                }
+            },
+
+            connectFriend: function(event){
+                var contactID = event.model.item;
+                console.log(contactID);
+                if(this.displayedRequests[(contactID.toString())]){
+                    delete this.displayedRequests[(contactID.toString())];
+                    var index = this.pairingRequests.indexOf(contactID);
+                    if(index!= null){
+                        console.log(index);
+                        this.splice("pairingRequests", index, 1);
+                        if (this.pairingRequests.length === 0) {
+                            this.$.toast.toggle();
+                        }
+                    }
+                }
+                else{
+                    console.log("yes");
+                }
+                XDmvc.pairFriends(contactID);
+            },
+
+            pairAutomatically: function (devices){
+                if(devices && devices.length>0){
+                    console.log(devices);
+                    var parsedList = Object.keys(JSON.parse(devices));
+                    console.log(parsedList);
+                    for(var l in parsedList){
+                        console.log("You are also logged in on device with id " +parsedList[l]+".\n");
+                    }
+                    XDmvc.connectTo(parsedList[0]);
+                }
+            },
+
+            acceptReq: function (event){
+                var contactID = event.model.item;
+                console.log("accepted req from "+ contactID);
+                var index = this.pairingRequests.indexOf(event.model.item);
+                this.splice("pairingRequests", index, 1);
+                if (this.pairingRequests.length === 0) {
+                    this.$.toast.toggle();
+                }
+                delete this.displayedRequests[contactID];
+                XDmvc.pairFriends(contactID);
+            },
+
+            declineReq: function (event) {
+                var contactID = event.model.item;
+                console.log("declined req from " + contactID);
+                var index = this.pairingRequests.indexOf(event.model.item);
+                this.splice("pairingRequests", index, 1);
+                if (this.pairingRequests.length === 0) {
+                    this.$.toast.toggle();
+                }
+                delete this.displayedRequests[contactID];
+                XDmvc.declinePairingRequest(contactID);
+            }
+
+        });
+    </script>
+</dom-module>
+

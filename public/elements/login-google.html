@@ -1,0 +1,172 @@
+<!--
+/*
+* XD-MVC -- A framework for cross-device applications
+* Copyright (C) 2014-2015 Maria Husmann. All rights reserved.
+*
+* This file was created by Sivaranjini Chithambaram.
+*
+* XD-MVC is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* XD-MVC is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with XD-MVC. If not, see <http://www.gnu.org/licenses/>.
+*
+* See the README and LICENSE files for further information.
+*
+*/
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-signin/google-signin.html">
+<link rel="import" href="../bower_components/google-apis/google-client-loader.html">
+<link rel="import" href="../bower_components/google-hangout-button/google-hangout-button.html">
+<script src="../bower_components/xdmvcclient/js/userpairing.js"></script>
+<dom-module id="login-google">
+    <template>
+        <style>
+            google-signin { float: right; }
+            google-hangout-button {float:right;}
+        </style>
+
+        <google-signin id = "gsignin" client-id="410318230524-b0frn30qjniekada015fmpuvlnj54lr9.apps.googleusercontent.com"
+                       scopes="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/contacts.readonly https://www.googleapis.com/auth/plus.me "
+                       on-google-signin-success = "signIn"
+                       on-google-signed-out="signOut"
+                       style="float:right"></google-signin>
+        <!--<google-hangout-button></google-hangout-button>-->
+
+        <google-client-loader id="peopleapi"
+                              name="people"
+                              version="v1"></google-client-loader>
+        <google-client-loader id="plusapi"
+                              name="plus"
+                              version="v1"></google-client-loader>
+
+
+    </template>
+
+
+    <script>
+
+        Polymer({
+            is: "login-google",
+            properties: {
+                userID : String,
+                clientID: String,
+                apiKEY: String
+            },
+
+            ready: function(){
+                var plusapi = this.$.plusapi;
+                var peopleapi = this.$.peopleapi;
+                plusapi.addEventListener('google-api-load', function(event) {
+                    console.log("loaded plus");
+                    var req1 = plusapi.api.people.list({
+                        'userId': 'me',
+                        'collection' : 'visible'
+                    });
+                    req1.execute(function (resp) {
+                        if(resp) {
+                            if(resp.items){
+                                this.filterOnlineContacts(resp, "plusAPI");
+                                window.setInterval(function(){
+                                    this.filterOnlineContacts(resp, "plusAPI");
+                                }.bind(this), 3000);
+                            }
+                            else console.log("no items");
+
+                        }
+                    }.bind(this));
+                }.bind(this));
+
+                peopleapi.addEventListener('google-api-load', function(event){
+                    var request = peopleapi.api.people.connections.list({
+                        'resourceName': 'people/me',
+                        'pageSize': 100,
+                        'requestMask.includeField': 'person.names,person.relations'
+                    });
+                    request.execute(function(resp) {
+                        var connections = resp.connections;
+                        if (connections) {
+                            console.log("filtering Online");
+                            this.filterOnlineContacts(connections, "peopleAPI");
+                            window.setInterval(function(){
+                                this.filterOnlineContacts(connections, "peopleAPI");
+                            }.bind(this), 3000);
+                        } else {
+
+                            console.log("no people API friends");
+                        }
+                    }.bind(this));
+                }.bind(this));
+            },
+
+            signIn: function(){
+                this.signedIn = true;
+                this.apiKEY = "AIzaSyBewPivQtvgP3d7rA3B2I7dBPzqIN0QJt8";
+                XDmvc.getLocation();
+                var userName = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile().getName();
+                var encoded_userID = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token;
+                var split_list = encoded_userID.split('.');
+                var jose_header = split_list[0];
+                var payload = split_list[1];
+                var signature = split_list[2];
+                var decoded_payload = JSON.parse(atob(payload).toString());
+                this.userID = decoded_payload.sub;
+                console.log("Name, ID: " + userName + " " + this.userID);
+                if (XDmvc.XDd2d.serverReady) {
+                    XDmvc.userSignIn(this.userID);
+                } else { // not yet connected to server, wait for the connection event
+                    XDmvc.XDd2d.on("XDserverReady", function(data){
+                        XDmvc.userSignIn(this.userID);
+                    }.bind(this));
+                }
+            },
+
+            signOut: function () {
+                this.signedIn = false;
+                XDmvc.userSignOut(this.userID);
+            },
+            filterOnlineContacts: function (contactList, APItype){
+
+                switch (APItype){
+                    case 'peopleAPI':
+                        var listLength = contactList.length;
+                        for (var k = 0; k < listLength; ++k) {
+                            var contact = contactList[k];
+                            var contactID = contact.resourceName.split("/")[1];
+                            var contactName;
+                            var contactRelation = "";
+                            if (contact.relations && contact.relations.length>0) {
+                                //set relation label to the first element in relations list
+                                contactRelation = (contact.relations[0].person).toLowerCase();//only adds 1 relation, the first one.
+                            }
+                            if(contact.names && contact.names.length > 0){
+                                contactName = contact.names[0].displayName;
+                            }
+                            XDmvc.checkContactOnline(contactName,contactID,contactRelation);
+                        }
+                        break;
+                    case 'plusAPI':
+                        var listLength = contactList.items.length;
+                        for (var i = 0; i < listLength; i++) {
+                            var contactName = contactList.items[i].displayName;
+                            var contactID = contactList.items[i].id;
+                            XDmvc.checkContactOnline(contactName, contactID,"");
+                        }
+                        break;
+                    default :
+                        console.log("filterOnlineFriends case not found");
+                }
+            }
+        })
+    </script>
+</dom-module>
+

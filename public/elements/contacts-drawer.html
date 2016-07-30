@@ -1,0 +1,628 @@
+<!--
+/*
+* XD-MVC -- A framework for cross-device applications
+* Copyright (C) 2014-2015 Maria Husmann. All rights reserved.
+*
+* This file was created by Sivaranjini Chithambaram.
+*
+* XD-MVC is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* XD-MVC is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with XD-MVC. If not, see <http://www.gnu.org/licenses/>.
+*
+* See the README and LICENSE files for further information.
+*
+*/
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icons/hardware-icons.html">
+<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/xdmvcclient/polymer/xdmvc-connect.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<script src="../bower_components/xdmvcclient/js/userpairing.js"></script>
+
+<link rel="stylesheet" media="screen and (max-device-width: 500px)" href="../css/contacts.css"/>
+<link rel="stylesheet" media="screen and (min-device-width: 500px)" href="../css/bigcontacts.css"/>
+<head>
+    <style>
+        .toast {
+            --paper-toast-background-color: black;
+            --paper-toast-color: white;
+        }
+
+        .tabletoggle1 {
+            border: none;
+            text-align: center;
+            font-size: 14px;
+            font-family: "Century Gothic";
+        }
+
+    </style>
+</head>
+<dom-module id="contacts-drawer">
+    <template>
+        <style>
+            paper-button {
+                --paper-button: {
+                    padding: 0;
+                }
+            }
+
+            paper-menu {
+                --paper-menu-selected-item: {
+                    font-weight: normal;
+                };
+            }
+        </style>
+        <paper-drawer-panel id="paperDrawerPanel" force-narrow>
+            <paper-header-panel drawer>
+                <paper-item>
+                    <paper-toggle-button checked class="tabletoggle1" style="clear:both;float:right;alignment:center;"
+                                         id="toggle"></paper-toggle-button>
+                    Sort by distance
+                    <paper-icon-button id="settingsBtn" icon="settings" on-click="handleSettings"></paper-icon-button>
+                </paper-item>
+
+                <div id="groupDiv" style="display:none">
+                    <paper-menu id="groupMenu" multi selected-values="{{selecteds}}">
+                        <template is="dom-repeat" items="{{groups}}">
+                            <paper-item style="background-color: lightblue">
+                                <iron-icon icon="[[getRelationship(item)]]"></iron-icon>
+                                [[getGroupName(item)]]
+                            </paper-item>
+                        </template>
+                    </paper-menu>
+                </div>
+
+                <div>
+                    <template is="dom-repeat" items="{{selecteds}}">
+                        <paper-button id="[[getFilterName(item)]]" on-click="removeFilter"
+                                      style="padding:0px;background:lightblue; ">
+                            [[getFilterName(item)]]
+                            <iron-icon icon="close"></iron-icon>
+                        </paper-button>
+                    </template>
+                </div>
+
+
+                <div style="clear:both">
+                    <paper-listbox>
+                        <template is="dom-repeat" items="{{onlineDevices}}">
+                            <paper-item on-click="connectDevice">
+                                <iron-icon icon="[[getDeviceIcon(item)]]"></iron-icon>
+                                [[getNameFromDevice(item)]]
+                            </paper-item>
+                        </template>
+                    </paper-listbox>
+                </div>
+
+                <pre id="output" style="clear:both;"></pre>
+            </paper-header-panel>
+            <paper-header-panel style="width:100%;height:100%" main>
+
+                <div style="margin:3px;width:100%;height:100%">
+                    <div>
+                        <paper-icon-button style="float:right;z-index:1" icon="social:people" paper-drawer-toggle
+                                           on-click="getFriends"></paper-icon-button>
+                    </div>
+                    <content style="clear:both;width:100%;height:100%"></content>
+                    <paper-toast id="toast" duration="0">
+                        <template is="dom-repeat" items="{{pairingRequests}}">
+                            <div>[[getName(item)]] would like to connect with you!</div>
+                            <paper-button id="acc" on-click="acceptReq" class="yellow-button">
+                                <iron-icon icon="check"></iron-icon>
+                                Accept
+                            </paper-button>
+                            <paper-button id="decl" on-click="declineReq" class="yellow-button">
+                                <iron-icon icon="close"></iron-icon>
+                                Decline
+                            </paper-button>
+                        </template>
+                    </paper-toast>
+                </div>
+            </paper-header-panel>
+        </paper-drawer-panel>
+    </template>
+
+    <script>
+        Polymer({
+            is: "contacts-drawer",
+            properties: {
+                //  friendList : {}, //dict key: contact id, value: list of 2 elements, 1st element in list = name, 2nd element in list = relation label
+                myID: String,
+                groups: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                },
+                selecteds: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                },
+                friendList: {
+                    type: Object,
+                    value: function () {
+                        return {};
+                    }
+                },
+                deviceUsers: {
+                    type: Object,
+                    value: function () {
+                        return {};
+                    }
+                },
+                pairingRequests: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                },
+                friendDevices: {
+                    type: Object,
+                    value: function () {
+                        return {};
+                    }
+                },
+                onlineDevices: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                },
+                onlineFriends: {
+                    type: Array,
+                    value: function () {
+                        return [];
+                    }
+                },
+                displayedRequests: {
+                    type: Object,
+                    value: function () {
+                        return {};
+                    }
+                } //key = contactID, value = true if already displayed req from contact
+            },
+            handleSettings: function () {
+                var menu = this.$.groupMenu;
+                var div = this.$.groupDiv;
+
+                var settingsBtn = this.$.settingsBtn;
+                var currentVisibility = div.getAttribute("style");
+                if (currentVisibility == "display:none") {
+                    div.setAttribute("style", "display:block");
+                    settingsBtn.setAttribute("style", "color:lightblue")
+                }
+                else {
+                    div.setAttribute("style", "display:none");
+                    settingsBtn.setAttribute("style", "color:black")
+                }
+            },
+
+            getFriends: function () {
+                var menu = this.$.groupMenu;
+                var selectedIndexes = this.selecteds;
+                var groupNames = [];
+                var toggle = this.$.toggle;
+                if (selectedIndexes) {
+                    for (var i = 0; i < selectedIndexes.length; i++) {
+                        if (selectedIndexes[i] == 0) {
+                            groupNames = ["all"];
+                            break;
+                        }
+                        groupNames.push(this.groups[selectedIndexes[i]]["name"]);
+                    }
+                    if (toggle.checked) {
+                        this.sortGroupByDistances(groupNames);
+                    }
+                    else {
+                        XDmvc.getFriendsSelected(groupNames, function (data) {
+                            this.displayFriends(data, "");
+                        }.bind(this));
+                    }
+                }
+            },
+            getName: function (contactId) {
+                if (this.friendList[contactId]) {
+                    return this.friendList[contactId][0];
+                }
+                else {
+                    return "Contact with no name, id: " + contactId;
+                }
+            },
+
+            getGroupName: function (object) {
+                var name = object["name"];
+                return name;
+            },
+
+            getNameFromDevice: function (deviceId) {
+                if (this.deviceUsers[deviceId]) {
+                    var contactId = this.deviceUsers[deviceId]["contactID"];
+
+                    return this.friendList[contactId][0];
+                }
+                else {
+                    return "Contact with no name, id: " + contactId;
+                }
+            },
+            getRelationshipFromDevice: function (deviceId) {
+                if (this.deviceUsers[deviceId]) {
+                    var contactId = this.deviceUsers[deviceId]["contactID"];
+                    if (this.friendList[contactId]) {
+                        if (this.friendList[contactId][1]) {
+                            var relationship = this.friendList[contactId][1];
+                            if (relationship == "friend") {
+                                return "social:mood";
+                            }
+                            if (relationship == "work") {
+                                return "social:domain";
+                            }
+                            if (relationship == "family") {
+                                return "home";
+                            }
+                            if (relationship == "acquaintances") {
+                                return "social:people-outline";
+                            }
+                            else {
+                                return "social:public"
+                            }
+                        }
+                    }
+                }
+
+            },
+
+            getDeviceIcon: function (deviceId) {
+                if (this.deviceUsers[deviceId]) {
+
+                    var type = this.deviceUsers[deviceId]["type"];
+                    console.log(type);
+                    if (type === "large") {
+                        return "hardware:laptop";
+                    } else if (type === "medium") {
+                        return "hardware:tablet-android"
+
+                    } else if (type === "xlarge") {
+                        return "hardware:desktop-windows"
+                    }
+                    else if (type === "small") {
+                        return "hardware:smartphone"
+                    } else {
+                        return "hardware:devices-other"
+                    }
+                }
+
+            },
+
+            getRelationship: function (object) {
+
+                var relationship = this.getGroupName(object);
+                if (relationship == "friend") {
+                    return "social:mood";
+                }
+                if (relationship == "work") {
+                    return "social:domain";
+                }
+                if (relationship == "family") {
+                    return "home";
+                }
+                if (relationship == "acquaintances") {
+                    return "social:people-outline";
+                }
+                else {
+                    return "social:public"
+                }
+
+            },
+
+            ready: function () {
+                window.onbeforeunload = function () {
+                    XDmvc.removeDevice();
+                };
+                window.setInterval(function () {
+                    XDmvc.getPairingRequests();
+                }, 3000);
+                var menu = this.$.groupMenu;
+
+                menu.selectIndex(0);
+
+                window.setInterval(function () {
+                    this.getFriends();
+                }.bind(this), 3000);
+
+
+            },
+
+            getVisibility: function (index) {
+                if (index == 0) {
+                    return "display:none";
+                }
+                return "";
+            },
+
+            showFilter: function (index) {
+                var id = this.groups[index]["name"];
+                console.log(document.getElementById(id));
+                console.log(id);
+                console.log("**");
+            },
+
+            getFilterName: function (index) {
+                return this.groups[index]["name"];
+            },
+
+            removeFilter: function (event) {
+                console.log(this.selecteds);
+                console.log(event);
+                var index = this.selecteds.indexOf(event.model.item);
+                if (this.selecteds[index] == event.model.item) {
+                    this.selecteds.splice(index, 1);
+                    var id = this.groups[event.model.item]["name"];
+                    console.log(id);
+                    var element = document.getElementById(id);
+                    element.parentNode.removeChild(element);
+                }
+
+                console.log(this.selecteds);
+            },
+
+            attached: function () {
+                XDmvc.on("signedIn", function (data) {
+                    if (data) {
+                        this.myID = data;
+                        this.pairAutomatically(data);
+                        this.getFriends();
+                    }
+                }.bind(this));
+
+                XDmvc.on("signedOut", function (data) {
+                    if (data) {
+                        this.friendList = {};
+                        this.onlineFriends = [];
+                        this.myID = "";
+                        this.onlineDevices = [];
+                    }
+                }.bind(this));
+
+                XDmvc.on("deleteDisplayedRequest", function (data) {
+                    if (this.displayedRequests[data]) {
+                        delete this.displayedRequests[data];
+                    }
+                }.bind(this));
+
+                XDmvc.on("onlineContact", function (contactName, contactID, contactRelation, contactsDeviceList) {
+                    this.enterOnlineFriend(contactName, contactID, contactRelation, contactsDeviceList);
+                }.bind(this));
+
+                XDmvc.on("newPairingRequests", function (parsedList) {
+                    for (var i = 0; i < parsedList.length; i++) {
+                        var x = parsedList[i];
+                        var contactID = x.toString();
+
+                        if (!this.displayedRequests[contactID]) {
+                            this.push("pairingRequests", contactID);
+                            this.$.toast.open();
+                            this.displayedRequests[contactID] = true;
+                        }
+
+                        else {
+                            console.log("This request was already displayed");
+                        }
+                    }
+                }.bind(this));
+
+                this.$.toggle.addEventListener('change', function () {
+                    if (this.checked) {
+                        this.getFriends();
+                    }
+                }.bind(this));
+
+                if (this.groups.length <= 0) {
+                    this.configDefaultGroups();
+                }
+
+                if (XDmvc.XDd2d.serverReady) {
+                    XDmvc.configureGroups(this.groups);
+                } else { // not yet connected to server, wait for the connection event
+                    XDmvc.XDd2d.on("XDserverReady", function (data) {
+                        XDmvc.configureGroups(this.groups);
+                    }.bind(this));
+                }
+            },
+
+            sortGroupByDistances: function (groupNames) {
+                XDmvc.getFriendsSelected(groupNames, function (friendsInGroup) {
+                    if (friendsInGroup) {
+                        XDmvc.sortGroupByDistance(friendsInGroup, function (sortedGroup) {
+                            if (sortedGroup) {
+                                this.displayFriends(sortedGroup, "sortList");
+                            }
+                        }.bind(this));
+                    }
+                }.bind(this))
+            },
+
+            configDefaultGroups : function () {
+                this.push("groups", {"name": "all", "requiresAck": true});
+                this.push("groups", {"name": "friend", "requiresAck": false});
+                this.push("groups", {"name": "family", "requiresAck": false});
+                this.push("groups", {"name": "work", "requiresAck": true});
+                this.push("groups", {"name": "acquaintances", "requiresAck": true});
+            },
+
+            displayFriends: function (friendsInGroup, sortList) {
+                if (friendsInGroup) {
+                    var parsedList = JSON.parse(friendsInGroup);
+                    this.onlineFriends = [];
+                    this.onlineDevices = [];
+                    for (var i = 0; i < parsedList.length; i++) {
+                        var id;
+
+                        if (sortList) {
+                            id = parsedList[i][1];
+                        }
+                        else {
+                            id = parsedList[i];
+                        }
+                        if (this.friendDevices[id]) {
+                            var devList = Object.keys(this.friendDevices[id]);
+                            for (var k = 0; k < devList.length; k++) {
+                                var index = this.onlineDevices.indexOf(devList[k]);
+                                if (index < 0) {
+                                    this.push("onlineDevices", devList[k]);
+                                    if (!this.deviceUsers[devList[k]])this.deviceUsers[devList[k]] = {};
+                                    this.deviceUsers[devList[k]]["contactID"] = id;
+                                    this.deviceUsers[devList[k]]["type"] = this.friendDevices[id][devList[k]];
+                                }
+                            }
+                        }
+                        if (this.friendList[id]) {
+                            this.push("onlineFriends", id);
+
+                        }
+                        else {
+                            console.log('displayFriends error: no entry in friendList');
+                        }
+                    }
+                }
+
+                else {
+                    console.log("displayFriends error : user has no friends in this group")
+                }
+            },
+
+            enterOnlineFriend: function (contactName, contactID, contactRelation, contactsDeviceList) {
+                // enters online friends into this.friendList, checks if already listed (through G+ API)
+                if (contactID) {
+                    XDmvc.logDistance(contactID);
+
+                    if (contactsDeviceList) {
+                        this.friendDevices[contactID] = contactsDeviceList;
+                    }
+
+                    if (this.friendList[contactID] && this.friendList[contactID].length > 0) {
+                        if (contactRelation) {
+                            XDmvc.enterRelationship(contactID, contactRelation);
+                            if (this.friendList[contactID].length < 2) {
+                                this.friendList[contactID].push(contactRelation);
+                            }
+                        }
+                    }
+                    else {
+                        if (!contactName) {
+                            contactName = "noName"
+                        }
+
+                        if (contactRelation) {
+                            console.log("entering contactRelation");
+                            XDmvc.enterRelationship(contactID, contactRelation);
+                            this.friendList[contactID] = [contactName, contactRelation];
+                        }
+
+                        else {
+                            console.log("just name");
+                            this.friendList[contactID] = [contactName];
+                        }
+                    }
+                }
+                else {
+                    console.log("contactInfo empty");
+                }
+            },
+
+            appendPre: function (message) {
+                var pre = this.$.output;
+                var textContent = document.createTextNode(message + '\n');
+                pre.appendChild(textContent);
+                document.body.appendChild(pre);
+            },
+
+            connectDevice: function (event) {
+                var deviceID = event.model.item;
+                var contactID = this.deviceUsers[deviceID]["contactID"];
+                console.log(deviceID);
+                if (this.displayedRequests[(contactID.toString())]) {
+                    delete this.displayedRequests[(contactID.toString())];
+                    var index = this.pairingRequests.indexOf(contactID);
+                    if (index != null) {
+                        console.log(index);
+                        this.splice("pairingRequests", index, 1);
+                        if (this.pairingRequests.length === 0) {
+                            this.$.toast.toggle();
+                        }
+                    }
+                }
+                else {
+                    console.log("yes");
+                }
+
+                XDmvc.pairDevice(deviceID, contactID);
+            },
+            pairAutomatically: function (devices) {
+                if (devices && devices.length > 0) {
+                    console.log(devices);
+                    var parsedList = Object.keys(JSON.parse(devices));
+                    console.log(parsedList);
+                    for (var l in parsedList) {
+                        console.log("You are also logged in on device with id " + parsedList[l] + ".\n");
+                    }
+                    XDmvc.connectTo(parsedList[0]);
+                }
+            },
+            acceptReq: function (event) {
+                var contactID = event.model.item;
+                var index = this.pairingRequests.indexOf(event.model.item);
+                this.splice("pairingRequests", index, 1);
+
+                if (this.pairingRequests.length === 0) {
+                    this.$.toast.toggle();
+                }
+
+                delete this.displayedRequests[contactID];
+                XDmvc.pairFriends(contactID);
+            },
+            declineReq: function (event) {
+                var contactID = event.model.item;
+                var index = this.pairingRequests.indexOf(event.model.item);
+                this.splice("pairingRequests", index, 1);
+
+                if (this.pairingRequests.length === 0) {
+                    this.$.toast.toggle();
+                }
+
+                delete this.displayedRequests[contactID];
+                XDmvc.declinePairingRequest(contactID);
+            }
+
+        });
+    </script>
+</dom-module>
+
+
