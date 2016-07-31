@@ -1,8 +1,8 @@
 {
-  "name": "xd-gallery",
+  "name": "xd-userpairing",
   "version": "0.1.0",
-  "author": "Maria Husmann <husmann@inf.ethz.ch>",
-  "description": "Cross-device Gallery",
+  "author": "Sivaranjini Chithambaram <chithams@inf.ethz.ch>, Maria Husmann <mhusm@inf.ethz.ch>",
+  "description": "Cross-Device User Pairing",
   "scripts": {
     "start": "node gallery-polymer.js"
   },
@@ -13,7 +13,7 @@
     "connect": ">=2.7.2",
     "body-parser": ">=1.9.2",
     "serve-static": ">=1.7.1",
-    "xdmvcserver": "github:mhusm/XD-MVC-Server"
+    "xdmvcserver": "github:chithams/XD-UserPairing-Server"
   },
   "devDependencies": {
     "bower": "^1.3.12",
