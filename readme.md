@@ -2,7 +2,6 @@
 This respository contains an extension of the [XD-MVC](https://github.com/mhusm/XD-MVC) cross-device framework which facilitates user-based device pairing.
 We have included two applications demonstrating the usage of the framework.
 
-
 * [Gallery](https://github.com/mhusm/XD-Gallery) is an existing photo sharing application developed by my supervisor,  [Maria Husmann](https://globis.ethz.ch/#!/person/maria-husmann/). Previously, device pairing
 was handled by QR codes and URLs. We improved the user experience of device pairing by
 utilizing our contacts-list Polymer element.
